@@ -102,7 +102,7 @@ app.post('/api/ai-generate', async (req, res) => {
         }
 
         // 1. Set up the AI model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // 2. Give the AI strict instructions to return JSON data
         const prompt = `Act as an expert tutor. Analyze the following text and extract the most important concepts into flashcards. 
