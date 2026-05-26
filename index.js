@@ -112,7 +112,7 @@ app.post('/api/ai-generate', async (req, res) => {
         const prompt = `Act as an expert tutor. Analyze the following text and extract ALL key concepts into flashcards. 
         Generate as many flashcards as necessary to comprehensively cover the material, but do NOT create repetitive or filler cards. 
         Only extract meaningful information.
-        The output MUST be a JSON array of objects, where each object has a "question" string and an "answer" string.
+        The output MUST be a JSON array of objects, where each object has a "q" string and an "a" string.
         
         Text to analyze:
         ${text}`;
