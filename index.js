@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const mongoose = require('mongoose'); // Add Mongoose
 
 const app = express();
@@ -88,6 +90,45 @@ app.post('/api/generate', async (req, res) => {
     console.log("Error saving card:", error);
     res.status(500).json({ error: "Failed to save card to database" });
   }
+});
+
+// The new AI-powered generation route
+app.post('/api/ai-generate', async (req, res) => {
+    try {
+        const { text } = req.body;
+        
+        if (!text) {
+            return res.status(400).json({ error: "No text provided" });
+        }
+
+        // 1. Set up the AI model
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // 2. Give the AI strict instructions to return JSON data
+        const prompt = `Act as an expert tutor. Analyze the following text and extract the most important concepts into flashcards. 
+        Return exactly 10 flashcards.
+        You MUST return the output ONLY as a raw JSON array of objects. Do not use markdown formatting, do not use backticks.
+        Each object must have exactly two keys: "question" and "answer".
+        
+        Text to analyze:
+        ${text}`;
+
+        // 3. Send the text to Gemini and wait for the response
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let aiText = response.text();
+
+        // 4. Clean up the response in case Gemini added markdown formatting
+        aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // 5. Convert the text into real JSON data and send it to the frontend
+        const flashcards = JSON.parse(aiText);
+        res.json(flashcards);
+
+    } catch (error) {
+        console.error("AI Generation Error:", error);
+        res.status(500).json({ error: "Failed to generate AI flashcards." });
+    }
 });
 
 app.listen(PORT, () => {
