@@ -95,33 +95,31 @@ app.post('/api/generate', async (req, res) => {
 // The new AI-powered generation route
 app.post('/api/ai-generate', async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text } = req.body; // We no longer need maxCards here
         
         if (!text) {
             return res.status(400).json({ error: "No text provided" });
         }
 
-        // 1. Set up the AI model
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            generationConfig: {
+                responseMimeType: "application/json", 
+            }
+        });
 
-        // 2. Give the AI strict instructions to return JSON data
-        const prompt = `Act as an expert tutor. Analyze the following text and extract the most important concepts into flashcards. 
-        Return exactly 10 flashcards.
-        You MUST return the output ONLY as a raw JSON array of objects. Do not use markdown formatting, do not use backticks.
-        Each object must have exactly two keys: "question" and "answer".
+        // NEW PROMPT: Telling the AI to decide the perfect amount of cards
+        const prompt = `Act as an expert tutor. Analyze the following text and extract ALL key concepts into flashcards. 
+        Generate as many flashcards as necessary to comprehensively cover the material, but do NOT create repetitive or filler cards. 
+        Only extract meaningful information.
+        The output MUST be a JSON array of objects, where each object has a "question" string and an "answer" string.
         
         Text to analyze:
         ${text}`;
 
-        // 3. Send the text to Gemini and wait for the response
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let aiText = response.text();
-
-        // 4. Clean up the response in case Gemini added markdown formatting
-        aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const aiText = result.response.text();
         
-        // 5. Convert the text into real JSON data and send it to the frontend
         const flashcards = JSON.parse(aiText);
         res.json(flashcards);
 
